@@ -1,0 +1,650 @@
+{
+  "name": "CorrectColours PDF Report Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "correctcolours-webhook",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "correctcolours-webhook-id"
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user-name",
+              "name": "user.name",
+              "value": "={{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "user-email",
+              "name": "user.email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "user-country",
+              "name": "user.country",
+              "value": "={{ $json.body.country }}",
+              "type": "string"
+            },
+            {
+              "id": "user-gender",
+              "name": "user.gender",
+              "value": "={{ $json.body.gender }}",
+              "type": "string"
+            },
+            {
+              "id": "images-front",
+              "name": "images.front",
+              "value": "={{ $json.body.face_scan.front }}",
+              "type": "string"
+            },
+            {
+              "id": "images-left",
+              "name": "images.left",
+              "value": "={{ $json.body.face_scan.left }}",
+              "type": "string"
+            },
+            {
+              "id": "images-right",
+              "name": "images.right",
+              "value": "={{ $json.body.face_scan.right }}",
+              "type": "string"
+            },
+            {
+              "id": "scan-status",
+              "name": "scan_status",
+              "value": "={{ $json.body.scan_status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-normalize",
+      "name": "Normalize Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-scan-status",
+              "leftValue": "={{ $json.scan_status }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-name",
+              "leftValue": "={{ $json.user.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "condition-email",
+              "leftValue": "={{ $json.user.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "condition-gender",
+              "leftValue": "={{ $json.user.gender }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "condition-front",
+              "leftValue": "={{ $json.images.front }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "condition-left",
+              "leftValue": "={{ $json.images.left }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "condition-right",
+              "leftValue": "={{ $json.images.right }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-validation",
+      "name": "Validation Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "value": "male",
+              "output": 0
+            },
+            {
+              "value": "female",
+              "output": 1
+            },
+            {
+              "value": "prefer_not_to_say",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 2,
+        "options": {},
+        "dataType": "string",
+        "value": "={{ $json.user.gender }}"
+      },
+      "id": "node-gender-switch",
+      "name": "Gender Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0,
+          "maxTokens": 4096
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are a professional colour analyst. Analyze the provided face scan images and generate a colour analysis report.\n\nUser Information:\n- Name: {{ $json.user.name }}\n- Gender: male\n- Country: {{ $json.user.country }}\n\nFace Scan Images:\n- Front: {{ $json.images.front }}\n- Left: {{ $json.images.left }}\n- Right: {{ $json.images.right }}\n\nGenerate a STRICT JSON response with the following structure. Output ONLY valid JSON, no prose, no HTML:\n\n{\n  \"analysis\": {\n    \"colours\": {\n      \"core\": [\n        { \"name\": \"colour_name\", \"hex\": \"#XXXXXX\" }\n      ],\n      \"avoid\": [\n        { \"name\": \"colour_name\", \"hex\": \"#XXXXXX\" }\n      ]\n    },\n    \"styling\": {\n      \"necklines\": {\n        \"recommended\": [\"neckline1\", \"neckline2\"],\n        \"caution\": [\"neckline1\"]\n      },\n      \"fabric\": {\n        \"recommended\": [\"fabric1\", \"fabric2\"],\n        \"caution\": [\"fabric1\"]\n      }\n    },\n    \"hair\": {\n      \"recommended_colors\": [\"color1\", \"color2\"],\n      \"recommended_styles\": [\"style1\", \"style2\"]\n    },\n    \"summary\": {\n      \"season\": \"season_name\",\n      \"undertone\": \"warm/cool/neutral\",\n      \"contrast_level\": \"high/medium/low\",\n      \"description\": \"Brief summary paragraph\"\n    }\n  }\n}\n\nIMPORTANT: The 'core' array MUST contain EXACTLY 14 colours. These are the user's core palette colours.",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "id": "node-analysis-male",
+      "name": "Analysis - Male",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [1130, 180],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0,
+          "maxTokens": 4096
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are a professional colour analyst. Analyze the provided face scan images and generate a colour analysis report.\n\nUser Information:\n- Name: {{ $json.user.name }}\n- Gender: female\n- Country: {{ $json.user.country }}\n\nFace Scan Images:\n- Front: {{ $json.images.front }}\n- Left: {{ $json.images.left }}\n- Right: {{ $json.images.right }}\n\nGenerate a STRICT JSON response with the following structure. Output ONLY valid JSON, no prose, no HTML:\n\n{\n  \"analysis\": {\n    \"colours\": {\n      \"core\": [\n        { \"name\": \"colour_name\", \"hex\": \"#XXXXXX\" }\n      ],\n      \"avoid\": [\n        { \"name\": \"colour_name\", \"hex\": \"#XXXXXX\" }\n      ]\n    },\n    \"styling\": {\n      \"necklines\": {\n        \"recommended\": [\"neckline1\", \"neckline2\"],\n        \"caution\": [\"neckline1\"]\n      },\n      \"fabric\": {\n        \"recommended\": [\"fabric1\", \"fabric2\"],\n        \"caution\": [\"fabric1\"]\n      }\n    },\n    \"hair\": {\n      \"recommended_colors\": [\"color1\", \"color2\"],\n      \"recommended_styles\": [\"style1\", \"style2\"]\n    },\n    \"summary\": {\n      \"season\": \"season_name\",\n      \"undertone\": \"warm/cool/neutral\",\n      \"contrast_level\": \"high/medium/low\",\n      \"description\": \"Brief summary paragraph\"\n    }\n  }\n}\n\nIMPORTANT: The 'core' array MUST contain EXACTLY 14 colours. These are the user's core palette colours.",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "id": "node-analysis-female",
+      "name": "Analysis - Female",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [1130, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0,
+          "maxTokens": 4096
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are a professional colour analyst. Analyze the provided face scan images and generate a colour analysis report.\n\nUser Information:\n- Name: {{ $json.user.name }}\n- Gender: unspecified\n- Country: {{ $json.user.country }}\n\nFace Scan Images:\n- Front: {{ $json.images.front }}\n- Left: {{ $json.images.left }}\n- Right: {{ $json.images.right }}\n\nGenerate a STRICT JSON response with the following structure. Output ONLY valid JSON, no prose, no HTML:\n\n{\n  \"analysis\": {\n    \"colours\": {\n      \"core\": [\n        { \"name\": \"colour_name\", \"hex\": \"#XXXXXX\" }\n      ],\n      \"avoid\": [\n        { \"name\": \"colour_name\", \"hex\": \"#XXXXXX\" }\n      ]\n    },\n    \"styling\": {\n      \"necklines\": {\n        \"recommended\": [\"neckline1\", \"neckline2\"],\n        \"caution\": [\"neckline1\"]\n      },\n      \"fabric\": {\n        \"recommended\": [\"fabric1\", \"fabric2\"],\n        \"caution\": [\"fabric1\"]\n      }\n    },\n    \"hair\": {\n      \"recommended_colors\": [\"color1\", \"color2\"],\n      \"recommended_styles\": [\"style1\", \"style2\"]\n    },\n    \"summary\": {\n      \"season\": \"season_name\",\n      \"undertone\": \"warm/cool/neutral\",\n      \"contrast_level\": \"high/medium/low\",\n      \"description\": \"Brief summary paragraph\"\n    }\n  }\n}\n\nIMPORTANT: The 'core' array MUST contain EXACTLY 14 colours. These are the user's core palette colours.",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "id": "node-analysis-neutral",
+      "name": "Analysis - Neutral",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [1130, 420],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "mergeByFields": {
+          "values": []
+        },
+        "options": {}
+      },
+      "id": "node-merge-analysis",
+      "name": "Merge Analysis Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1350, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.PDF_TEMPLATE_URL || 'https://raw.githubusercontent.com/YOUR_ORG/correctcolours/main/templates/report-template.html' }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "node-fetch-html",
+      "name": "Fetch HTML Template",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1570, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data from previous nodes\nconst items = $input.all();\nconst inputData = items[0].json;\n\n// Get the HTML template\nconst htmlTemplate = inputData.data || inputData.body || inputData;\n\n// Get user data (passed through the workflow)\nconst userData = {\n  name: $('Normalize Data').item.json.user.name,\n  email: $('Normalize Data').item.json.user.email,\n  country: $('Normalize Data').item.json.user.country,\n  gender: $('Normalize Data').item.json.user.gender\n};\n\n// Get analysis data from the merge node\nconst analysisRaw = $('Merge Analysis Results').item.json;\nlet analysis;\n\n// Parse analysis if it's a string\ntry {\n  if (typeof analysisRaw === 'string') {\n    analysis = JSON.parse(analysisRaw);\n  } else if (analysisRaw.message && analysisRaw.message.content) {\n    analysis = JSON.parse(analysisRaw.message.content);\n  } else if (analysisRaw.analysis) {\n    analysis = analysisRaw;\n  } else {\n    analysis = analysisRaw;\n  }\n} catch (e) {\n  analysis = analysisRaw;\n}\n\nlet html = typeof htmlTemplate === 'string' ? htmlTemplate : JSON.stringify(htmlTemplate);\n\n// Replace user placeholders\nhtml = html.replace(/\\{\\{USER_NAME\\}\\}/g, userData.name || '');\nhtml = html.replace(/\\{\\{USER_EMAIL\\}\\}/g, userData.email || '');\nhtml = html.replace(/\\{\\{USER_COUNTRY\\}\\}/g, userData.country || '');\nhtml = html.replace(/\\{\\{USER_GENDER\\}\\}/g, userData.gender || '');\n\n// Replace analysis placeholders\nconst analysisData = analysis.analysis || analysis;\n\n// Replace core colours (14 items)\nif (analysisData.colours && analysisData.colours.core) {\n  for (let i = 0; i < 14; i++) {\n    const colour = analysisData.colours.core[i] || { name: '', hex: '' };\n    html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.colours\\\\.core\\\\[${i}\\\\]\\\\.name\\\\}\\\\}`, 'g'), colour.name || '');\n    html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.colours\\\\.core\\\\[${i}\\\\]\\\\.hex\\\\}\\\\}`, 'g'), colour.hex || '');\n  }\n}\n\n// Replace avoid colours\nif (analysisData.colours && analysisData.colours.avoid) {\n  for (let i = 0; i < analysisData.colours.avoid.length; i++) {\n    const colour = analysisData.colours.avoid[i] || { name: '', hex: '' };\n    html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.colours\\\\.avoid\\\\[${i}\\\\]\\\\.name\\\\}\\\\}`, 'g'), colour.name || '');\n    html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.colours\\\\.avoid\\\\[${i}\\\\]\\\\.hex\\\\}\\\\}`, 'g'), colour.hex || '');\n  }\n}\n\n// Replace necklines\nif (analysisData.styling && analysisData.styling.necklines) {\n  const necklines = analysisData.styling.necklines;\n  if (necklines.recommended) {\n    for (let i = 0; i < necklines.recommended.length; i++) {\n      html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.styling\\\\.necklines\\\\.recommended\\\\[${i}\\\\]\\\\}\\\\}`, 'g'), necklines.recommended[i] || '');\n    }\n  }\n  if (necklines.caution) {\n    for (let i = 0; i < necklines.caution.length; i++) {\n      html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.styling\\\\.necklines\\\\.caution\\\\[${i}\\\\]\\\\}\\\\}`, 'g'), necklines.caution[i] || '');\n    }\n  }\n}\n\n// Replace fabric\nif (analysisData.styling && analysisData.styling.fabric) {\n  const fabric = analysisData.styling.fabric;\n  if (fabric.recommended) {\n    for (let i = 0; i < fabric.recommended.length; i++) {\n      html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.styling\\\\.fabric\\\\.recommended\\\\[${i}\\\\]\\\\}\\\\}`, 'g'), fabric.recommended[i] || '');\n    }\n  }\n  if (fabric.caution) {\n    for (let i = 0; i < fabric.caution.length; i++) {\n      html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.styling\\\\.fabric\\\\.caution\\\\[${i}\\\\]\\\\}\\\\}`, 'g'), fabric.caution[i] || '');\n    }\n  }\n}\n\n// Replace hair recommendations\nif (analysisData.hair) {\n  if (analysisData.hair.recommended_colors) {\n    for (let i = 0; i < analysisData.hair.recommended_colors.length; i++) {\n      html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.hair\\\\.recommended_colors\\\\[${i}\\\\]\\\\}\\\\}`, 'g'), analysisData.hair.recommended_colors[i] || '');\n    }\n  }\n  if (analysisData.hair.recommended_styles) {\n    for (let i = 0; i < analysisData.hair.recommended_styles.length; i++) {\n      html = html.replace(new RegExp(`\\\\{\\\\{analysis\\\\.hair\\\\.recommended_styles\\\\[${i}\\\\]\\\\}\\\\}`, 'g'), analysisData.hair.recommended_styles[i] || '');\n    }\n  }\n}\n\n// Replace summary\nif (analysisData.summary) {\n  html = html.replace(/\\{\\{analysis\\.summary\\.season\\}\\}/g, analysisData.summary.season || '');\n  html = html.replace(/\\{\\{analysis\\.summary\\.undertone\\}\\}/g, analysisData.summary.undertone || '');\n  html = html.replace(/\\{\\{analysis\\.summary\\.contrast_level\\}\\}/g, analysisData.summary.contrast_level || '');\n  html = html.replace(/\\{\\{analysis\\.summary\\.description\\}\\}/g, analysisData.summary.description || '');\n}\n\n// Pass through user data for email\nreturn [\n  {\n    json: {\n      html: html,\n      user: userData,\n      analysis: analysisData\n    }\n  }\n];"
+      },
+      "id": "node-inject-data",
+      "name": "Inject Data into HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1790, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BROWSERLESS_URL || 'https://chrome.browserless.io/pdf' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"html\": {{ JSON.stringify($json.html) }},\n  \"options\": {\n    \"format\": \"A4\",\n    \"printBackground\": true,\n    \"preferCSSPageSize\": true,\n    \"displayHeaderFooter\": false,\n    \"margin\": {\n      \"top\": \"0\",\n      \"right\": \"0\",\n      \"bottom\": \"0\",\n      \"left\": \"0\"\n    }\n  },\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle0\",\n    \"timeout\": 60000\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "pdf"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "node-render-pdf",
+      "name": "Render PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2010, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BROWSERLESS_CREDENTIAL_ID",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM_EMAIL || 'reports@correctcolours.com' }}",
+        "toEmail": "={{ $('Normalize Data').item.json.user.email }}",
+        "subject": "Your CorrectColours Report",
+        "emailType": "text",
+        "message": "Dear {{ $('Normalize Data').item.json.user.name }},\n\nThank you for using CorrectColours. Please find your personalised colour analysis report attached.\n\nYour report includes:\n- Your 14 core palette colours\n- Styling recommendations\n- Hair colour and style suggestions\n- Colours to avoid\n\nWe hope you enjoy discovering your perfect colours!\n\nBest regards,\nThe CorrectColours Team",
+        "options": {
+          "attachments": "pdf"
+        }
+      },
+      "id": "node-send-email",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [2230, 300],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "node-error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [250, 520]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM_EMAIL || 'reports@correctcolours.com' }}",
+        "toEmail": "={{ $json.execution?.customData?.user?.email || $json.user?.email || 'support@correctcolours.com' }}",
+        "subject": "Your CorrectColours Report - Processing",
+        "emailType": "text",
+        "message": "Dear Customer,\n\nWe're finishing your CorrectColours report and will send it shortly.\n\nThank you for your patience.\n\nBest regards,\nThe CorrectColours Team",
+        "options": {}
+      },
+      "id": "node-error-email",
+      "name": "Error Notification Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [470, 520],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-log",
+              "name": "error_logged",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-log-error",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [690, 520]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={\"status\": \"error\", \"message\": \"Validation failed. Please ensure all required fields are provided and scan_status is approved.\"}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "node-validation-failed",
+      "name": "Validation Failed Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [910, 480]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Data": {
+      "main": [
+        [
+          {
+            "node": "Validation Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Check": {
+      "main": [
+        [
+          {
+            "node": "Gender Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Failed Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gender Switch": {
+      "main": [
+        [
+          {
+            "node": "Analysis - Male",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analysis - Female",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analysis - Neutral",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysis - Male": {
+      "main": [
+        [
+          {
+            "node": "Merge Analysis Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysis - Female": {
+      "main": [
+        [
+          {
+            "node": "Merge Analysis Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysis - Neutral": {
+      "main": [
+        [
+          {
+            "node": "Merge Analysis Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Analysis Results": {
+      "main": [
+        [
+          {
+            "node": "Fetch HTML Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch HTML Template": {
+      "main": [
+        [
+          {
+            "node": "Inject Data into HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inject Data into HTML": {
+      "main": [
+        [
+          {
+            "node": "Render PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Notification Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Notification Email": {
+      "main": [
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "CorrectColours",
+      "id": "tag-correctcolours"
+    },
+    {
+      "name": "PDF",
+      "id": "tag-pdf"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-08-01T00:00:00.000Z",
+  "versionId": "1"
+}
