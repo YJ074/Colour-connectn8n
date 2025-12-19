@@ -120,7 +120,10 @@ There are 3 analysis nodes (one per gender route):
       }
     },
     "hair": {
-      "recommended_colors": ["color1", "color2"],
+      "natural_alignment": "Description of hair/skin undertone alignment",
+      "undertone_alignment": "warm/cool/neutral",
+      "recommended_colours": ["color1", "color2"],
+      "avoid_colours": ["color1", "color2"],
       "recommended_styles": ["style1", "style2"]
     },
     "summary": {
@@ -134,6 +137,11 @@ There are 3 analysis nodes (one per gender route):
 ```
 
 **IMPORTANT:** The `core` array contains EXACTLY 14 colours.
+
+**Hair Colour Harmony Rules (Gender-Aware):**
+- **Male:** Natural, professional, low-maintenance tones. Avoid extreme contrast unless facial contrast supports it.
+- **Female:** Wider but harmonious palette. Undertone accuracy over trends.
+- **Neutral/Prefer Not To Say:** Strict colour science with minimal stylistic bias.
 
 ---
 
