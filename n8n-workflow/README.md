@@ -170,6 +170,10 @@ There are 3 analysis nodes (one per gender route):
 | `{{analysis.colours.core[0].name}}` | Analysis JSON |
 | `{{analysis.colours.core[0].hex}}` | Analysis JSON |
 | `{{analysis.styling.necklines.recommended[0]}}` | Analysis JSON |
+| `{{analysis.hair.natural_alignment}}` | Analysis JSON |
+| `{{analysis.hair.undertone_alignment}}` | Analysis JSON |
+| `{{analysis.hair.recommended_colours[0]}}` | Analysis JSON |
+| `{{analysis.hair.avoid_colours[0]}}` | Analysis JSON |
 | ... (all indexed placeholders) | ... |
 
 **Does NOT:**
