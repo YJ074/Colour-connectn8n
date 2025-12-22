@@ -733,6 +733,17 @@
       "main": [
         [
           {
+            "node": "Log Success to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Success to Sheets": {
+      "main": [
+        [
+          {
             "node": "Success Response",
             "type": "main",
             "index": 0
