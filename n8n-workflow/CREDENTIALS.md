@@ -106,6 +106,29 @@ This document lists all credentials required to run the n8n workflow.
 
 ---
 
+## 4. Google Sheets OAuth2 Credential
+
+**Purpose:** Logging workflow executions to operational dashboard
+
+**Credential Type:** Google Sheets OAuth2 API  
+**Name:** `Google Sheets OAuth2`
+
+**How to Get:**
+1. Go to Google Cloud Console: https://console.cloud.google.com/
+2. Create a new project or select existing
+3. Enable Google Sheets API
+4. Create OAuth 2.0 credentials (Web application)
+5. Add n8n callback URL to authorized redirect URIs
+
+**n8n Setup:**
+1. Settings → Credentials → Add Credential
+2. Select "Google Sheets OAuth2 API"
+3. Enter Client ID and Client Secret from Google Cloud Console
+4. Click "Sign in with Google" and authorize
+5. Save
+
+---
+
 ## Environment Variables
 
 Set these in n8n Settings → Variables:
