@@ -498,6 +498,92 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [690, 600]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_NAME || 'Sheet1' }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ new Date().toISOString() }}",
+            "name": "={{ $('Normalize Data').first().json.user.name || '' }}",
+            "email": "={{ $('Normalize Data').first().json.user.email || '' }}",
+            "mobile": "={{ $('Normalize Data').first().json.user.mobile || '' }}",
+            "country": "={{ $('Normalize Data').first().json.user.country || '' }}",
+            "gender": "={{ $('Normalize Data').first().json.user.gender || '' }}",
+            "status": "sent",
+            "pdf_status": "generated",
+            "email_status": "sent",
+            "n8n_execution_id": "={{ $execution.id }}",
+            "error_message": ""
+          }
+        },
+        "options": {}
+      },
+      "id": "gsheet-success-node",
+      "name": "Log Success to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [2450, 180],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_NAME || 'Sheet1' }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ new Date().toISOString() }}",
+            "name": "={{ $json.execution?.customData?.user?.name || '' }}",
+            "email": "={{ $json.execution?.customData?.user?.email || '' }}",
+            "mobile": "={{ $json.execution?.customData?.user?.mobile || '' }}",
+            "country": "={{ $json.execution?.customData?.user?.country || '' }}",
+            "gender": "={{ $json.execution?.customData?.user?.gender || '' }}",
+            "status": "failed",
+            "pdf_status": "not_generated",
+            "email_status": "failed",
+            "n8n_execution_id": "={{ $execution.id }}",
+            "error_message": "={{ $json.error?.message || $json.message || 'Unknown error' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "gsheet-failure-node",
+      "name": "Log Failure to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [910, 600],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
     }
   ],
   "connections": {
