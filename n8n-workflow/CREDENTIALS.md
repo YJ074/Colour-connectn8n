@@ -115,6 +115,8 @@ Set these in n8n Settings → Variables:
 | `PDF_TEMPLATE_URL` | GitHub raw URL for the 25-page HTML template | Yes |
 | `BROWSERLESS_URL` | PDF rendering service endpoint | Yes |
 | `SMTP_FROM_EMAIL` | Sender email address | Yes |
+| `GOOGLE_SHEET_ID` | Google Sheet document ID | Yes |
+| `GOOGLE_SHEET_NAME` | Sheet tab name (default: Sheet1) | No |
 
 **Example Values:**
 ```
