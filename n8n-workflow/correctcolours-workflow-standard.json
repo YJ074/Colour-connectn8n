@@ -772,6 +772,17 @@
           }
         ]
       ]
+    },
+    "Log Error": {
+      "main": [
+        [
+          {
+            "node": "Log Failure to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {},
