@@ -68,6 +68,12 @@
               "name": "scan_status",
               "value": "={{ $json.body?.scan_status || $json.scan_status || '' }}",
               "type": "string"
+            },
+            {
+              "id": "user-mobile",
+              "name": "user.mobile",
+              "value": "={{ $json.body?.mobile || $json.mobile || '' }}",
+              "type": "string"
             }
           ]
         },
