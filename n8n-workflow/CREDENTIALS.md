@@ -2,6 +2,15 @@
 
 This document lists all credentials required to run the n8n workflow.
 
+## Credential Summary
+
+| Credential Name | Type | Purpose | Required Fields |
+|-----------------|------|---------|-----------------|
+| **OpenAI API** | `openAiApi` | AI colour analysis | API Key |
+| **SMTP** | `smtp` | Email delivery | Host, Port, User, Password |
+| **Browserless API** | `httpHeaderAuth` | PDF rendering | Authorization header with API token |
+| **Google Sheets OAuth2** | `googleSheetsOAuth2Api` | Execution logging | OAuth2 Client ID & Secret |
+
 ---
 
 ## 1. OpenAI API Credential
